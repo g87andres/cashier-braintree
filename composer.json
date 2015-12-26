@@ -1,0 +1,34 @@
+{
+    "name": "limedeck/cashier-braintree",
+    "description": "LimeDeck Cashier-Braintree provides an expressive, fluent interface to Braintree's subscription billing services.",
+    "keywords": ["laravel", "braintree", "billing"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rudolf Halas",
+            "email": "rudolf@limedeck.io"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "illuminate/database": "~5.1",
+        "illuminate/support": "~5.1",
+        "nesbot/carbon": "~1.0",
+        "braintree/braintree_php": "^3.7",
+        "symfony/http-kernel": "~2.7|~3.0"
+    },
+    "require-dev": {
+        "dompdf/dompdf": "^0.6.1",
+        "illuminate/routing": "~5.1",
+        "illuminate/http": "~5.1",
+        "illuminate/view": "~5.1",
+        "mockery/mockery": "~0.9",
+        "phpunit/phpunit": "~4.0",
+        "vlucas/phpdotenv": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LimeDeck\\CashierBraintree\\": "src/"
+        }
+    }
+}
