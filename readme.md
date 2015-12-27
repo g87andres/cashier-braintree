@@ -1,6 +1,6 @@
 # Cashier-Braintree
 
-[![Build Status](https://travis-ci.org/LimeDeck/cashier-braintree.svg](https://travis-ci.org/LimeDeck/cashier-braintree)
+[![Build Status](https://travis-ci.org/LimeDeck/cashier-braintree.svg)](https://travis-ci.org/LimeDeck/cashier-braintree)
 [![Total Downloads](https://poser.pugx.org/limedeck/cashier-braintree/downloads)](https://packagist.org/packages/limedeck/cashier-braintree)
 [![Latest Unstable Version](https://poser.pugx.org/limedeck/cashier-braintree/v/unstable)](https://packagist.org/packages/limedeck/cashier-braintree)
 [![License](https://poser.pugx.org/limedeck/cashier-braintree/license)](https://packagist.org/packages/limedeck/cashier-braintree)
