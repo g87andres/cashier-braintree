@@ -14,7 +14,9 @@ Cashier-Braintree is a rewrite of [Laravel Cashier](https://github.com/laravel/c
 ## Usage
 
 ### Installation
-Run `composer install`. Then proceed with the environment setup.
+Add this repository to your `composer.json` file by running
+
+`composer require limedeck/cashier-braintree`
 
 ### Setting up the environment
 See the included `.env.example` file. You will need a BrainTree sandbox account in order to be able to obtain the login information.
