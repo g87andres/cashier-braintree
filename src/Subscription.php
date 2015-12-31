@@ -52,7 +52,7 @@ class Subscription extends Model
      */
     public function cancelled()
     {
-        return ! is_null($this->ends_at);
+        return !is_null($this->ends_at);
     }
 
     /**
@@ -62,7 +62,7 @@ class Subscription extends Model
      */
     public function onTrial()
     {
-        if (! is_null($this->trial_ends_at)) {
+        if (!is_null($this->trial_ends_at)) {
             return Carbon::today()->lt($this->trial_ends_at);
         } else {
             return false;
@@ -76,7 +76,7 @@ class Subscription extends Model
      */
     public function onGracePeriod()
     {
-        if (! is_null($endsAt = $this->ends_at)) {
+        if (!is_null($endsAt = $this->ends_at)) {
             return Carbon::now()->lt(Carbon::instance($endsAt));
         } else {
             return false;
@@ -86,7 +86,8 @@ class Subscription extends Model
     /**
      * Apply a coupon to the subscription.
      *
-     * @param  string  $coupon
+     * @param string $coupon
+     *
      * @return void
      */
     public function applyCoupon($coupon)
@@ -96,16 +97,17 @@ class Subscription extends Model
         BraintreeSubscription::update($subscription->id, [
             'discounts' => [
                 'add' => [
-                    ['inheritedFromId' => $coupon]
+                    ['inheritedFromId' => $coupon],
                 ],
-            ]
+            ],
         ]);
     }
 
     /**
      * Swap the subscription to a new Braintree plan.
      *
-     * @param  string  $plan
+     * @param string $plan
+     *
      * @return bool|$this
      */
     public function swap($plan)
@@ -113,10 +115,10 @@ class Subscription extends Model
         $subscription = $this->asBraintreeSubscription();
 
         $changes = [
-            'planId' => $plan,
+            'planId'  => $plan,
             'options' => [
-                'prorateCharges' => true
-            ]
+                'prorateCharges' => true,
+            ],
         ];
 
         // If no specific trial end date has been set, the default behavior should be
@@ -194,8 +196,9 @@ class Subscription extends Model
     /**
      * Resume the cancelled subscription.
      *
-     * @return $this
      * @throws \Exception
+     *
+     * @return $this
      */
     public function resume()
     {

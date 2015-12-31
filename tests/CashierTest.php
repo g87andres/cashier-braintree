@@ -19,9 +19,9 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         Eloquent::unguard();
 
-        $db = new DB;
+        $db = new DB();
         $db->addConnection([
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
         ]);
         $db->bootEloquent();
@@ -68,7 +68,7 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         $user = User::create([
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'name'  => 'John Doe',
         ]);
 
         // Create Subscription
@@ -138,7 +138,7 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         $user = User::create([
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'name'  => 'John Doe',
         ]);
 
         // Create Subscription
@@ -167,7 +167,7 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         $user = User::create([
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'name'  => 'John Doe',
         ]);
 
         // Create Subscription
@@ -196,7 +196,7 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         $user = User::create([
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'name'  => 'John Doe',
         ]);
 
         // Create Subscription
@@ -220,7 +220,7 @@ class CashierTest extends PHPUnit_Framework_TestCase
     {
         $user = User::create([
             'email' => 'john@example.com',
-            'name' => 'John Doe',
+            'name'  => 'John Doe',
         ]);
 
         // Create Subscription

@@ -2,11 +2,11 @@
 
 namespace LimeDeck\CashierBraintree;
 
+use Braintree\Customer as BraintreeCustomer;
 use Braintree\PaymentMethod;
 use Braintree\Transaction;
 use Braintree\TransactionSearch;
 use Illuminate\Support\Collection;
-use Braintree\Customer as BraintreeCustomer;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 trait Billable
@@ -14,19 +14,20 @@ trait Billable
     /**
      * Make a "one off" charge on the customer for the given amount.
      *
-     * @param  int  $amount
-     * @param  string $nonce
-     * @param  array  $options
+     * @param int    $amount
+     * @param string $nonce
+     * @param array  $options
+     *
      * @return bool|mixed
      */
     public function charge($amount, $nonce, array $options = [])
     {
         $options = array_merge([
-            'amount' => $amount,
+            'amount'             => $amount,
             'paymentMethodNonce' => $nonce,
-            'options' => [
-                'submitForSettlement' => true
-            ]
+            'options'            => [
+                'submitForSettlement' => true,
+            ],
         ], $options);
 
         $result = Transaction::sale($options);
@@ -41,8 +42,9 @@ trait Billable
     /**
      * Begin creating a new subscription.
      *
-     * @param  string  $subscription
-     * @param  string  $plan
+     * @param string $subscription
+     * @param string $plan
+     *
      * @return \LimeDeck\CashierBraintree\SubscriptionBuilder
      */
     public function newSubscription($subscription, $plan)
@@ -53,8 +55,9 @@ trait Billable
     /**
      * Determine if the user has a given subscription.
      *
-     * @param  string  $subscription
-     * @param  string|null  $plan
+     * @param string      $subscription
+     * @param string|null $plan
+     *
      * @return bool
      */
     public function subscribed($subscription = 'default', $plan = null)
@@ -71,7 +74,8 @@ trait Billable
     /**
      * Get a subscription instance by name.
      *
-     * @param  string  $subscription
+     * @param string $subscription
+     *
      * @return \LimeDeck\CashierBraintree\Subscription|null
      */
     public function subscription($subscription = 'default')
@@ -135,7 +139,8 @@ trait Billable
     /**
      * Find an invoice by ID.
      *
-     * @param  string  $id
+     * @param string $id
+     *
      * @return \LimeDeck\CashierBraintree\Invoice|null
      */
     public function findInvoice($id)
@@ -150,7 +155,8 @@ trait Billable
     /**
      * Find an invoice or throw a 404 error.
      *
-     * @param  string  $id
+     * @param string $id
+     *
      * @return \LimeDeck\CashierBraintree\Invoice
      */
     public function findInvoiceOrFail($id)
@@ -158,7 +164,7 @@ trait Billable
         $invoice = $this->findInvoice($id);
 
         if (is_null($invoice)) {
-            throw new NotFoundHttpException;
+            throw new NotFoundHttpException();
         } else {
             return $invoice;
         }
@@ -167,9 +173,10 @@ trait Billable
     /**
      * Create an invoice download Response.
      *
-     * @param  string  $id
-     * @param  array   $data
-     * @param  string  $storagePath
+     * @param string $id
+     * @param array  $data
+     * @param string $storagePath
+     *
      * @return \Symfony\Component\HttpFoundation\Response
      */
     public function downloadInvoice($id, array $data, $storagePath = null)
@@ -180,8 +187,9 @@ trait Billable
     /**
      * Get a collection of the entity's invoices.
      *
-     * @param  bool  $includePending
-     * @param  array  $parameters
+     * @param bool  $includePending
+     * @param array $parameters
+     *
      * @return \Illuminate\Support\Collection
      */
     public function invoices($includePending = false, $parameters = [])
@@ -191,7 +199,7 @@ trait Billable
         $customer = $this->asBraintreeCustomer();
 
         $parameters = array_merge([
-            TransactionSearch::customerId()->is($customer->id)
+            TransactionSearch::customerId()->is($customer->id),
         ], $parameters);
 
         $braintreeTransactions = Transaction::search($parameters);
@@ -199,7 +207,7 @@ trait Billable
         // Here we will loop through the Braintree invoices and create our own custom Invoice
         // instances that have more helper methods and are generally more convenient to
         // work with than the plain Braintree objects are. Then, we'll return the array.
-        if (! is_null($braintreeTransactions)) {
+        if (!is_null($braintreeTransactions)) {
             foreach ($braintreeTransactions as $transaction) {
                 // TODO: SETTLED?
                 if (($transaction->status == Transaction::SUBMITTED_FOR_SETTLEMENT) || $includePending) {
@@ -214,7 +222,8 @@ trait Billable
     /**
      * Get an array of the entity's invoices.
      *
-     * @param  array  $parameters
+     * @param array $parameters
+     *
      * @return \Illuminate\Support\Collection
      */
     public function invoicesIncludingPending(array $parameters = [])
@@ -225,7 +234,8 @@ trait Billable
     /**
      * Update customer's credit card.
      *
-     * @param  string  $nonce
+     * @param string $nonce
+     *
      * @return bool
      */
     public function updateCard($nonce)
@@ -233,7 +243,7 @@ trait Billable
         $customer = $this->asBraintreeCustomer();
 
         $result = PaymentMethod::update($customer->paymentMethods[0], [
-            'paymentMethodNonce' => $nonce
+            'paymentMethodNonce' => $nonce,
         ]);
 
         if ($result->success) {
@@ -251,12 +261,13 @@ trait Billable
     /**
      * Determine if the entity is on the given plan.
      *
-     * @param  string  $plan
+     * @param string $plan
+     *
      * @return bool
      */
     public function onPlan($plan)
     {
-        return ! is_null($this->subscriptions->first(function ($key, $value) use ($plan) {
+        return !is_null($this->subscriptions->first(function ($key, $value) use ($plan) {
             return $value->stripe_plan === $plan;
         }));
     }
@@ -268,14 +279,15 @@ trait Billable
      */
     public function hasBraintreeId()
     {
-        return ! is_null($this->braintree_id);
+        return !is_null($this->braintree_id);
     }
 
     /**
      * Create a Braintree customer for the given user.
      *
-     * @param  string $nonce
-     * @param  array  $options
+     * @param string $nonce
+     * @param array  $options
+     *
      * @return bool|\Braintree\Customer
      */
     public function createAsBraintreeCustomer($nonce, array $options = [])
@@ -285,13 +297,13 @@ trait Billable
         // and allow us to retrieve users from Braintree later when we need to work.
         $result = BraintreeCustomer::create(
             array_merge($options, [
-                'email' => $this->email,
+                'email'              => $this->email,
                 'paymentMethodNonce' => $nonce,
-                'creditCard' => [
+                'creditCard'         => [
                     'options' => [
-                        'makeDefault' => true
-                    ]
-                ]
+                        'makeDefault' => true,
+                    ],
+                ],
             ])
         );
 
@@ -328,5 +340,4 @@ trait Billable
     {
         return 0;
     }
-
 }

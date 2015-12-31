@@ -26,8 +26,9 @@ class Invoice
     /**
      * Create a new invoice instance.
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $user
-     * @param  \Braintree\Transaction  $invoice
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Braintree\Transaction              $invoice
+     *
      * @return void
      */
     public function __construct($user, Transaction $invoice)
@@ -39,7 +40,8 @@ class Invoice
     /**
      * Get a Carbon date for the invoice.
      *
-     * @param  \DateTimeZone|string  $timezone
+     * @param \DateTimeZone|string $timezone
+     *
      * @return \Carbon\Carbon
      */
     public function date($timezone = null)
@@ -142,8 +144,9 @@ class Invoice
     /**
      * Determine if the discount is a percentage.
      *
-     * @return bool
      * @throws \Exception
+     *
+     * @return bool
      */
     public function discountIsPercentage()
     {
@@ -157,7 +160,7 @@ class Invoice
      */
     public function percentOff()
     {
-        return max(0, round($this->discount()/$this->subtotalCalculation()*100))."%";
+        return max(0, round($this->discount() / $this->subtotalCalculation() * 100)).'%';
     }
 
     /**
@@ -193,7 +196,8 @@ class Invoice
     /**
      * Get all of the invoie items by a given type.
      *
-     * @param  string  $type
+     * @param string $type
+     *
      * @return array
      */
     public function invoiceItemsByType($type)
@@ -214,7 +218,8 @@ class Invoice
     /**
      * Format the given amount into a string based on the user's preferences.
      *
-     * @param  int  $amount
+     * @param int $amount
+     *
      * @return string
      */
     protected function formatAmount($amount)
@@ -225,7 +230,8 @@ class Invoice
     /**
      * Get the View instance for the invoice.
      *
-     * @param  array  $data
+     * @param array $data
+     *
      * @return \Illuminate\View\View
      */
     public function view(array $data)
@@ -238,12 +244,13 @@ class Invoice
     /**
      * Capture the invoice as a PDF and return the raw bytes.
      *
-     * @param  array  $data
+     * @param array $data
+     *
      * @return string
      */
     public function pdf(array $data)
     {
-        if (! defined('DOMPDF_ENABLE_AUTOLOAD')) {
+        if (!defined('DOMPDF_ENABLE_AUTOLOAD')) {
             define('DOMPDF_ENABLE_AUTOLOAD', false);
         }
 
@@ -251,7 +258,7 @@ class Invoice
             require_once $configPath;
         }
 
-        $dompdf = new \DOMPDF;
+        $dompdf = new \DOMPDF();
 
         $dompdf->load_html($this->view($data)->render());
 
@@ -263,7 +270,8 @@ class Invoice
     /**
      * Create an invoice download response.
      *
-     * @param  array   $data
+     * @param array $data
+     *
      * @return \Symfony\Component\HttpFoundation\Response
      */
     public function download(array $data)
@@ -271,10 +279,10 @@ class Invoice
         $filename = $data['product'].'_'.$this->date()->month.'_'.$this->date()->year.'.pdf';
 
         return new Response($this->pdf($data), 200, [
-            'Content-Description' => 'File Transfer',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Description'       => 'File Transfer',
+            'Content-Disposition'       => 'attachment; filename="'.$filename.'"',
             'Content-Transfer-Encoding' => 'binary',
-            'Content-Type' => 'application/pdf',
+            'Content-Type'              => 'application/pdf',
         ]);
     }
 
@@ -301,7 +309,8 @@ class Invoice
     /**
      * Dynamically get values from the Stripe invoice.
      *
-     * @param  string  $key
+     * @param string $key
+     *
      * @return mixed
      */
     public function __get($key)
