@@ -83,6 +83,8 @@ class CashierTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($user->subscription('main')->active());
         $this->assertFalse($user->subscription('main')->cancelled());
         $this->assertFalse($user->subscription('main')->onGracePeriod());
+        $this->assertNotNull($user->card_brand);
+        $this->assertNotNull($user->card_last_four);
 
         // Cancel Subscription
         $subscription = $user->subscription('main');

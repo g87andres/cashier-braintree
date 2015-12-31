@@ -57,7 +57,6 @@ class SubscriptionBuilder
      * @param  mixed  $user
      * @param  string  $name
      * @param  string  $plan
-     * @return void
      */
     public function __construct($user, $name, $plan)
     {
@@ -98,7 +97,7 @@ class SubscriptionBuilder
      * Add a new Stripe subscription to the user.
      *
      * @param  array  $options
-     * @return \Laravel\Cashier\Subscription
+     * @return \LimeDeck\CashierBraintree\Subscription
      */
     public function add(array $options = [])
     {
@@ -110,7 +109,7 @@ class SubscriptionBuilder
      *
      * @param  string|null  $nonce
      * @param  array  $options
-     * @return \Laravel\Cashier\Subscription
+     * @return \LimeDeck\CashierBraintree\Subscription
      */
     public function create($nonce = null, array $options = [])
     {

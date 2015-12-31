@@ -43,7 +43,7 @@ trait Billable
      *
      * @param  string  $subscription
      * @param  string  $plan
-     * @return \Laravel\Cashier\SubscriptionBuilder
+     * @return \LimeDeck\CashierBraintree\SubscriptionBuilder
      */
     public function newSubscription($subscription, $plan)
     {
@@ -72,7 +72,7 @@ trait Billable
      * Get a subscription instance by name.
      *
      * @param  string  $subscription
-     * @return \Laravel\Cashier\Subscription|null
+     * @return \LimeDeck\CashierBraintree\Subscription|null
      */
     public function subscription($subscription = 'default')
     {
@@ -104,8 +104,8 @@ trait Billable
         // TODO: can this be done??
         if ($this->stripe_id) {
             try {
-                StripeInvoice::create(['customer' => $this->stripe_id], $this->getStripeKey())->pay();
-            } catch (StripeErrorInvalidRequest $e) {
+                BraintreeInvoice::create(['customer' => $this->stripe_id], $this->getBraintreeKey())->pay();
+            } catch (BraintreeErrorInvalidRequest $e) {
                 return false;
             }
         }
@@ -116,18 +116,18 @@ trait Billable
     /**
      * Get the entity's upcoming invoice.
      *
-     * @return \Laravel\Cashier\Invoice|null
+     * @return \LimeDeck\CashierBraintree\Invoice|null
      */
     public function upcomingInvoice()
     {
         // TODO: can this be done??
         try {
-            $stripeInvoice = StripeInvoice::upcoming(
-                ['customer' => $this->stripe_id], ['api_key' => $this->getStripeKey()]
+            $stripeInvoice = BraintreeInvoice::upcoming(
+                ['customer' => $this->stripe_id], ['api_key' => $this->getBraintreeKey()]
             );
 
             return new Invoice($this, $stripeInvoice);
-        } catch (StripeErrorInvalidRequest $e) {
+        } catch (BraintreeErrorInvalidRequest $e) {
             //
         }
     }
@@ -136,7 +136,7 @@ trait Billable
      * Find an invoice by ID.
      *
      * @param  string  $id
-     * @return \Laravel\Cashier\Invoice|null
+     * @return \LimeDeck\CashierBraintree\Invoice|null
      */
     public function findInvoice($id)
     {
@@ -151,7 +151,7 @@ trait Billable
      * Find an invoice or throw a 404 error.
      *
      * @param  string  $id
-     * @return \Laravel\Cashier\Invoice
+     * @return \LimeDeck\CashierBraintree\Invoice
      */
     public function findInvoiceOrFail($id)
     {
@@ -196,9 +196,9 @@ trait Billable
 
         $braintreeTransactions = Transaction::search($parameters);
 
-        // Here we will loop through the Stripe invoices and create our own custom Invoice
+        // Here we will loop through the Braintree invoices and create our own custom Invoice
         // instances that have more helper methods and are generally more convenient to
-        // work with than the plain Stripe objects are. Then, we'll return the array.
+        // work with than the plain Braintree objects are. Then, we'll return the array.
         if (! is_null($braintreeTransactions)) {
             foreach ($braintreeTransactions as $transaction) {
                 // TODO: SETTLED?
@@ -262,7 +262,7 @@ trait Billable
     }
 
     /**
-     * Determine if the entity has a Stripe customer ID.
+     * Determine if the entity has a Braintree customer ID.
      *
      * @return bool
      */
@@ -272,7 +272,7 @@ trait Billable
     }
 
     /**
-     * Create a Stripe customer for the given user.
+     * Create a Braintree customer for the given user.
      *
      * @param  string $nonce
      * @param  array  $options
@@ -298,6 +298,9 @@ trait Billable
         if ($result->success) {
             $this->braintree_id = $result->customer->id;
 
+            $this->card_brand = $result->customer->paymentMethods[0]->cardType;
+            $this->card_last_four = $result->customer->paymentMethods[0]->last4;
+
             $this->save();
 
             return $result->customer;
@@ -307,7 +310,7 @@ trait Billable
     }
 
     /**
-     * Get the Stripe customer for the user.
+     * Get the Braintree customer for the user.
      *
      * @return \Braintree\Customer
      */

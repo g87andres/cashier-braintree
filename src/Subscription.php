@@ -30,7 +30,7 @@ class Subscription extends Model
      */
     public function user()
     {
-        $model = getenv('STRIPE_MODEL') ?: config('services.stripe.model');
+        $model = getenv('BRAINTREE_MODEL') ?: config('services.braintree.model');
 
         return $this->belongsTo($model, 'user_id');
     }
@@ -203,7 +203,7 @@ class Subscription extends Model
     }
 
     /**
-     * Get the subscription as a Stripe subscription object.
+     * Get the subscription as a Braintree subscription object.
      *
      * @return BraintreeSubscription
      */
