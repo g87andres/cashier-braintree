@@ -54,9 +54,9 @@ class SubscriptionBuilder
     /**
      * Create a new subscription builder instance.
      *
-     * @param  mixed  $user
-     * @param  string  $name
-     * @param  string  $plan
+     * @param mixed  $user
+     * @param string $name
+     * @param string $plan
      */
     public function __construct($user, $name, $plan)
     {
@@ -68,7 +68,8 @@ class SubscriptionBuilder
     /**
      * Specify the ending date of the trial.
      *
-     * @param  int  $trialDays
+     * @param int $trialDays
+     *
      * @return $this
      */
     public function trialDays($trialDays)
@@ -81,8 +82,9 @@ class SubscriptionBuilder
     /**
      * The coupon to apply to a new subscription.
      *
-     * @param  string $coupon
-     * @param  bool   $percentage
+     * @param string $coupon
+     * @param bool   $percentage
+     *
      * @return $this
      */
     public function withCoupon($coupon, $percentage = false)
@@ -96,7 +98,8 @@ class SubscriptionBuilder
     /**
      * Add a new Stripe subscription to the user.
      *
-     * @param  array  $options
+     * @param array $options
+     *
      * @return \LimeDeck\CashierBraintree\Subscription
      */
     public function add(array $options = [])
@@ -107,8 +110,9 @@ class SubscriptionBuilder
     /**
      * Create a new Braintree subscription.
      *
-     * @param  string|null  $nonce
-     * @param  array  $options
+     * @param string|null $nonce
+     * @param array       $options
+     *
      * @return \LimeDeck\CashierBraintree\Subscription
      */
     public function create($nonce = null, array $options = [])
@@ -117,14 +121,13 @@ class SubscriptionBuilder
 
         $subscriptionOptions = [
             'paymentMethodToken' => $customer->paymentMethods[0]->token,
-            'planId' => $this->plan,
-            'trialDuration' => $this->trialDays ?: 0,
-            'trialDurationUnit' => 'day',
-            'trialPeriod' => $this->trialDays ? true : false,
+            'planId'             => $this->plan,
+            'trialDuration'      => $this->trialDays ?: 0,
+            'trialDurationUnit'  => 'day',
+            'trialPeriod'        => $this->trialDays ? true : false,
         ];
 
         if ($this->coupon) {
-
             $braintreeCoupons = Discount::all();
             $braintreePlans = Plan::all();
 
@@ -143,14 +146,14 @@ class SubscriptionBuilder
                 }
             }
 
-            $amount = $this->couponPercentage ? ($coupon->amount/100) * $plan->price : $coupon->amount;
+            $amount = $this->couponPercentage ? ($coupon->amount / 100) * $plan->price : $coupon->amount;
 
             $subscriptionOptions['discounts'] = [
                 'add' => [
                     [
                         'inheritedFromId' => $this->coupon,
-                        'amount' => $amount
-                    ]
+                        'amount'          => $amount,
+                    ],
                 ],
             ];
         }
@@ -158,25 +161,26 @@ class SubscriptionBuilder
         $result = BraintreeSubscription::create($subscriptionOptions);
 
         return $this->user->subscriptions()->create([
-            'name' => $this->name,
-            'braintree_id' => $result->subscription->id,
+            'name'           => $this->name,
+            'braintree_id'   => $result->subscription->id,
             'braintree_plan' => $this->plan,
-            'quantity' => 1,//$this->quantity,
-            'trial_ends_at' => $this->trialDays ? Carbon::now()->addDays($this->trialDays) : null,
-            'ends_at' => null,
+            'quantity'       => 1, //$this->quantity,
+            'trial_ends_at'  => $this->trialDays ? Carbon::now()->addDays($this->trialDays) : null,
+            'ends_at'        => null,
         ]);
     }
 
     /**
      * Get the Stripe customer instance for the current user and token.
      *
-     * @param  string|null  $nonce
-     * @param  array  $options
+     * @param string|null $nonce
+     * @param array       $options
+     *
      * @return \Braintree\Customer
      */
     protected function getBraintreeCustomer($nonce = null, array $options = [])
     {
-        if (! $this->user->braintree_id) {
+        if (!$this->user->braintree_id) {
             $customer = $this->user->createAsBraintreeCustomer(
                 $nonce, $options
             );
