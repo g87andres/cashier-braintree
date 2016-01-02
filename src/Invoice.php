@@ -52,7 +52,7 @@ class Invoice
     }
 
     /**
-     * Get the total amount that was paid (or will be paid).
+     * Get the total amount that was paid (or will be paid) as money formatted value.
      *
      * @return string
      */
@@ -63,13 +63,18 @@ class Invoice
         );
     }
 
+    /**
+     * Get the total amount that was paid (or will be paid).
+     *
+     * @return mixed
+     */
     protected function totalCalculation()
     {
         return max(0, $this->invoice->amount - $this->rawStartingBalance());
     }
 
     /**
-     * Get the total of the invoice (before discounts).
+     * Get the total of the invoice (before discounts) as money formatted value.
      *
      * @return string
      */
@@ -80,6 +85,11 @@ class Invoice
         );
     }
 
+    /**
+     * Get the total of the invoice (before discounts).
+     *
+     * @return mixed
+     */
     protected function subtotalCalculation()
     {
         return max(0, $this->invoice->amount + $this->discount() - $this->rawStartingBalance());

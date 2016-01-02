@@ -96,7 +96,7 @@ class SubscriptionBuilder
     }
 
     /**
-     * Add a new Stripe subscription to the user.
+     * Add a new Braintree subscription to the user.
      *
      * @param array $options
      *
@@ -164,14 +164,14 @@ class SubscriptionBuilder
             'name'           => $this->name,
             'braintree_id'   => $result->subscription->id,
             'braintree_plan' => $this->plan,
-            'quantity'       => 1, //$this->quantity,
+            'quantity'       => 1,
             'trial_ends_at'  => $this->trialDays ? Carbon::now()->addDays($this->trialDays) : null,
             'ends_at'        => null,
         ]);
     }
 
     /**
-     * Get the Stripe customer instance for the current user and token.
+     * Get the Braintree customer instance for the current user and token.
      *
      * @param string|null $nonce
      * @param array       $options
@@ -196,7 +196,7 @@ class SubscriptionBuilder
     }
 
     /**
-     * Get the trial ending date for the Stripe payload.
+     * Get the trial ending date for the Braintree payload.
      *
      * @return int|null
      */
@@ -208,7 +208,7 @@ class SubscriptionBuilder
     }
 
     /**
-     * Get the tax percentage for the Stripe payload.
+     * Get the tax percentage for the Braintree payload.
      *
      * @return int|null
      */

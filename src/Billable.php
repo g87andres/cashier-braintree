@@ -67,24 +67,24 @@ trait Billable
         if (is_null($plan)) {
             return $subscription && $subscription->active();
         } else {
-            return $subscription && $subscription->active() && $subscription->braintree_plan === $plan;
+            return $subscription && $subscription->active() && $subscription->onPlan($plan);
         }
     }
 
     /**
      * Get a subscription instance by name.
      *
-     * @param string $subscription
+     * @param string $name
      *
      * @return \LimeDeck\CashierBraintree\Subscription|null
      */
-    public function subscription($subscription = 'default')
+    public function subscription($name = 'default')
     {
-        return $this->subscriptions->sortByDesc(function ($value) {
-            return $value->created_at->getTimestamp();
+        return $this->subscriptions->sortByDesc(function (Subscription $subscription) {
+            return $subscription->created_at->getTimestamp();
         })
-        ->first(function ($key, $value) use ($subscription) {
-            return $value->name === $subscription;
+        ->first(function ($key, Subscription $subscription) use ($name) {
+            return $subscription->name === $name;
         });
     }
 
@@ -96,44 +96,6 @@ trait Billable
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class)->orderBy('created_at', 'desc');
-    }
-
-    /**
-     * Invoice the billable entity outside of regular billing cycle.
-     *
-     * @return bool
-     */
-    public function invoice()
-    {
-        // TODO: can this be done??
-        if ($this->stripe_id) {
-            try {
-                BraintreeInvoice::create(['customer' => $this->stripe_id], $this->getBraintreeKey())->pay();
-            } catch (BraintreeErrorInvalidRequest $e) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Get the entity's upcoming invoice.
-     *
-     * @return \LimeDeck\CashierBraintree\Invoice|null
-     */
-    public function upcomingInvoice()
-    {
-        // TODO: can this be done??
-        try {
-            $stripeInvoice = BraintreeInvoice::upcoming(
-                ['customer' => $this->stripe_id], ['api_key' => $this->getBraintreeKey()]
-            );
-
-            return new Invoice($this, $stripeInvoice);
-        } catch (BraintreeErrorInvalidRequest $e) {
-            //
-        }
     }
 
     /**
@@ -209,7 +171,6 @@ trait Billable
         // work with than the plain Braintree objects are. Then, we'll return the array.
         if (!is_null($braintreeTransactions)) {
             foreach ($braintreeTransactions as $transaction) {
-                // TODO: SETTLED?
                 if (($transaction->status == Transaction::SUBMITTED_FOR_SETTLEMENT) || $includePending) {
                     $invoices[] = new Invoice($this, $transaction);
                 }
@@ -267,8 +228,8 @@ trait Billable
      */
     public function onPlan($plan)
     {
-        return !is_null($this->subscriptions->first(function ($key, $value) use ($plan) {
-            return $value->stripe_plan === $plan;
+        return !is_null($this->subscriptions->first(function ($key, Subscription $subscription) use ($plan) {
+            return $subscription->onPlan($plan);
         }));
     }
 

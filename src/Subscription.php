@@ -4,6 +4,7 @@ namespace LimeDeck\CashierBraintree;
 
 use Braintree\Subscription as BraintreeSubscription;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
@@ -56,6 +57,18 @@ class Subscription extends Model
     }
 
     /**
+     * Determine if the subscription is valid for a specific plan.
+     *
+     * @param string $plan
+     *
+     * @return bool
+     */
+    public function onPlan($plan)
+    {
+        return $this->braintree_plan === $plan;
+    }
+
+    /**
      * Determine if the subscription is within its trial period.
      *
      * @return bool
@@ -89,18 +102,24 @@ class Subscription extends Model
      * @param string $coupon
      *
      * @return void
+     *
+     * @throws \Exception
      */
     public function applyCoupon($coupon)
     {
         $subscription = $this->asBraintreeSubscription();
 
-        BraintreeSubscription::update($subscription->id, [
+        $result = BraintreeSubscription::update($subscription->id, [
             'discounts' => [
                 'add' => [
                     ['inheritedFromId' => $coupon],
                 ],
             ],
         ]);
+
+        if (! $result->success) {
+            throw new Exception('Coupon was not applied');
+        }
     }
 
     /**
@@ -131,9 +150,6 @@ class Subscription extends Model
         $result = BraintreeSubscription::update($subscription->id, $changes);
 
         if ($result->success) {
-            // TODO: invoice user in some magical way
-//        $this->user->invoice();
-
             $this->fill(['braintree_plan' => $plan])->save();
 
             return $this;
@@ -196,13 +212,13 @@ class Subscription extends Model
     /**
      * Resume the cancelled subscription.
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return $this
      */
     public function resume()
     {
-        throw new \Exception('Cannot be implemented with Braintree.');
+        throw new Exception('Cannot be implemented with Braintree.');
     }
 
     /**
