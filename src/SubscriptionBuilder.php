@@ -6,6 +6,7 @@ use Braintree\Discount;
 use Braintree\Plan;
 use Braintree\Subscription as BraintreeSubscription;
 use Carbon\Carbon;
+use Exception;
 
 class SubscriptionBuilder
 {
@@ -114,6 +115,7 @@ class SubscriptionBuilder
      * @param array       $options
      *
      * @return \LimeDeck\CashierBraintree\Subscription
+     * @throws \Exception
      */
     public function create($nonce = null, array $options = [])
     {
@@ -159,6 +161,10 @@ class SubscriptionBuilder
         }
 
         $result = BraintreeSubscription::create($subscriptionOptions);
+
+        if (!$result->success) {
+            throw new Exception('Subscription was not created');
+        }
 
         return $this->user->subscriptions()->create([
             'name'           => $this->name,
