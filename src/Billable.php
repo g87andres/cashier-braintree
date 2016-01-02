@@ -6,6 +6,7 @@ use Braintree\Customer as BraintreeCustomer;
 use Braintree\PaymentMethod;
 use Braintree\Transaction;
 use Braintree\TransactionSearch;
+use Exception;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
