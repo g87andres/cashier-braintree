@@ -15,10 +15,10 @@
         "illuminate/support": "~5.1",
         "nesbot/carbon": "~1.0",
         "braintree/braintree_php": "^3.7",
-        "symfony/http-kernel": "~2.7|~3.0"
+        "symfony/http-kernel": "~2.7|~3.0",
+        "dompdf/dompdf": "^0.6.1"
     },
     "require-dev": {
-        "dompdf/dompdf": "^0.6.1",
         "illuminate/routing": "~5.1",
         "illuminate/http": "~5.1",
         "illuminate/view": "~5.1",
