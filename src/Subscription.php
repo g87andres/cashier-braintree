@@ -140,13 +140,6 @@ class Subscription extends Model
             ],
         ];
 
-        // If no specific trial end date has been set, the default behavior should be
-        // to maintain the current trial state, whether that is "active" or to run
-        // the swap out with the exact number of days left on this current plan.
-        if ($this->onTrial()) {
-            //TODO: return new subscription with shifted start by $this->trial_ends_at
-        }
-
         $result = BraintreeSubscription::update($subscription->id, $changes);
 
         if ($result->success) {
@@ -207,18 +200,6 @@ class Subscription extends Model
     public function markAsCancelled()
     {
         $this->fill(['ends_at' => Carbon::now()])->save();
-    }
-
-    /**
-     * Resume the cancelled subscription.
-     *
-     * @throws Exception
-     *
-     * @return $this
-     */
-    public function resume()
-    {
-        throw new Exception('Cannot be implemented with Braintree.');
     }
 
     /**
