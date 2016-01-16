@@ -105,7 +105,6 @@ class CashierTest extends PHPUnit_Framework_TestCase
         $subscription->fill(['ends_at' => $oldGracePeriod])->save();
 
         // Resume Subscription
-//        $subscription->resume();
 //        We can't resume canceled subscriptions, that's why we create a new one
         $user->newSubscription('main', 'monthly-10-1')->create();
 
