@@ -2,8 +2,10 @@
 
 namespace LimeDeck\CashierBraintree;
 
-use Braintree\Transaction;
+use Braintree\Transaction as BraintreeTransaction;
+use Braintree\Subscription as BraintreeSubscription;
 use Carbon\Carbon;
+use DOMPDF;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -17,24 +19,31 @@ class Invoice
     protected $user;
 
     /**
-     * The Stripe invoice instance.
+     * The Braintree subscription instance.
+     *
+     * @var \Braintree\Subscription
+     */
+    protected $subscription;
+
+    /**
+     * The Braintree transaction instance.
      *
      * @var \Braintree\Transaction
      */
-    protected $invoice;
+    protected $transaction;
 
     /**
      * Create a new invoice instance.
      *
      * @param \Illuminate\Database\Eloquent\Model $user
-     * @param \Braintree\Transaction              $invoice
-     *
-     * @return void
+     * @param \Braintree\Subscription             $subscription
+     * @param \Braintree\Transaction              $transaction
      */
-    public function __construct($user, Transaction $invoice)
+    public function __construct($user, BraintreeSubscription $subscription, BraintreeTransaction $transaction)
     {
         $this->user = $user;
-        $this->invoice = $invoice;
+        $this->subscription = $subscription;
+        $this->transaction = $transaction;
     }
 
     /**
@@ -46,7 +55,7 @@ class Invoice
      */
     public function date($timezone = null)
     {
-        $carbon = Carbon::instance($this->invoice->createdAt);
+        $carbon = Carbon::instance($this->transaction->createdAt);
 
         return $timezone ? $carbon->setTimezone($timezone) : $carbon;
     }
@@ -59,7 +68,7 @@ class Invoice
     public function total()
     {
         return $this->formatAmount(
-            $this->totalCalculation()
+            max(0, $this->transaction->amount)
         );
     }
 
@@ -70,7 +79,7 @@ class Invoice
      */
     protected function totalCalculation()
     {
-        return max(0, $this->invoice->amount - $this->rawStartingBalance());
+        return max(0, $this->transaction->amount);
     }
 
     /**
@@ -92,7 +101,7 @@ class Invoice
      */
     protected function subtotalCalculation()
     {
-        return max(0, $this->invoice->amount + $this->discount() - $this->rawStartingBalance());
+        return max(0, $this->transaction->amount + $this->discount() - $this->rawStartingBalance());
     }
 
     /**
@@ -102,7 +111,7 @@ class Invoice
      */
     public function hasStartingBalance()
     {
-        return $this->rawStartingBalance() > 0;
+        return $this->rawStartingBalance() != 0;
     }
 
     /**
@@ -122,7 +131,7 @@ class Invoice
      */
     public function hasDiscount()
     {
-        return count($this->invoice->discounts) > 0;
+        return count($this->transaction->discounts) > 0;
     }
 
     /**
@@ -134,7 +143,7 @@ class Invoice
     {
         $amount = 0;
 
-        foreach ($this->invoice->discounts as $discount) {
+        foreach ($this->transaction->discounts as $discount) {
             $amount += $discount->amount;
         }
 
@@ -148,19 +157,7 @@ class Invoice
      */
     public function coupon()
     {
-        return isset($this->invoice->discounts[0]) ? $this->invoice->discounts[0] : null;
-    }
-
-    /**
-     * Determine if the discount is a percentage.
-     *
-     * @throws \Exception
-     *
-     * @return bool
-     */
-    public function discountIsPercentage()
-    {
-        throw new \Exception('Somewhat hard to figure out, since discounts are applied as value not percentage.');
+        return isset($this->transaction->discounts[0]) ? $this->transaction->discounts[0] : null;
     }
 
     /**
@@ -268,7 +265,7 @@ class Invoice
             require_once $configPath;
         }
 
-        $dompdf = new \DOMPDF();
+        $dompdf = new DOMPDF();
 
         $dompdf->load_html($this->view($data)->render());
 
@@ -303,21 +300,23 @@ class Invoice
      */
     protected function rawStartingBalance()
     {
-        return 0;
+        $balance = $this->subscription->statusHistory[0]->balance;
+
+        return isset($balance) ? $balance : 0;
     }
 
     /**
-     * Get the Stripe invoice instance.
+     * Get the Braintree invoice instance.
      *
-     * @return \Braintree\Transaction
+     * @return \Braintree\Subscription
      */
-    public function asBraintreeTransaction()
+    public function asBraintreeSubscription()
     {
-        return $this->invoice;
+        return $this->subscription;
     }
 
     /**
-     * Dynamically get values from the Stripe invoice.
+     * Dynamically get values from the Braintree transaction.
      *
      * @param string $key
      *
@@ -325,6 +324,6 @@ class Invoice
      */
     public function __get($key)
     {
-        return $this->invoice->{$key};
+        return $this->transaction->{$key};
     }
 }

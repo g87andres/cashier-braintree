@@ -4,6 +4,8 @@ namespace LimeDeck\CashierBraintree;
 
 use Braintree\Customer as BraintreeCustomer;
 use Braintree\PaymentMethod;
+use Braintree\Subscription as BraintreeSubscription;
+use Braintree\SubscriptionSearch;
 use Braintree\Transaction;
 use Braintree\TransactionSearch;
 use Exception;
@@ -100,31 +102,38 @@ trait Billable
     }
 
     /**
-     * Find an invoice by ID.
+     * Find an invoice for subscription by transaction ID.
      *
      * @param string $id
      *
      * @return \LimeDeck\CashierBraintree\Invoice|null
      */
-    public function findInvoice($id)
+    public function findInvoice($plan, $id)
     {
+        $subscription = BraintreeSubscription::search(
+            SubscriptionSearch::planId($plan)
+        );
+
+        $transaction = Transaction::find($id);
+
         try {
-            return new Invoice($this, Transaction::find($id));
+            return new Invoice($this, $subscription, $transaction);
         } catch (Exception $e) {
-            //
+            return null;
         }
     }
 
     /**
      * Find an invoice or throw a 404 error.
      *
+     * @param string $plan
      * @param string $id
      *
      * @return \LimeDeck\CashierBraintree\Invoice
      */
-    public function findInvoiceOrFail($id)
+    public function findInvoiceOrFail($plan, $id)
     {
-        $invoice = $this->findInvoice($id);
+        $invoice = $this->findInvoice($plan, $id);
 
         if (is_null($invoice)) {
             throw new NotFoundHttpException();
@@ -136,15 +145,16 @@ trait Billable
     /**
      * Create an invoice download Response.
      *
+     * @param string $plan
      * @param string $id
      * @param array  $data
      * @param string $storagePath
      *
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function downloadInvoice($id, array $data, $storagePath = null)
+    public function downloadInvoice($plan, $id, array $data, $storagePath = null)
     {
-        return $this->findInvoiceOrFail($id)->download($data, $storagePath);
+        return $this->findInvoiceOrFail($plan, $id)->download($data, $storagePath);
     }
 
     /**
@@ -157,7 +167,7 @@ trait Billable
      */
     public function invoices($includePending = false, $parameters = [])
     {
-        $invoices = [];
+        $invoices = new Collection();
 
         $customer = $this->asBraintreeCustomer();
 
@@ -167,18 +177,30 @@ trait Billable
 
         $braintreeTransactions = Transaction::search($parameters);
 
+        $subscriptionIds = [];
+
+        foreach ($braintreeTransactions as $braintreeTransaction) {
+            $subscriptionIds[] = $braintreeTransaction->subscriptionId;
+        }
+
+        $braintreeSubscriptions = BraintreeSubscription::fetch([], array_unique($subscriptionIds));
+
         // Here we will loop through the Braintree invoices and create our own custom Invoice
         // instances that have more helper methods and are generally more convenient to
         // work with than the plain Braintree objects are. Then, we'll return the array.
-        if (!is_null($braintreeTransactions)) {
-            foreach ($braintreeTransactions as $transaction) {
-                if (($transaction->status == Transaction::SUBMITTED_FOR_SETTLEMENT) || $includePending) {
-                    $invoices[] = new Invoice($this, $transaction);
+        if (!is_null($braintreeSubscriptions)) {
+            foreach ($braintreeSubscriptions as $subscription) {
+                if (($subscription->status == BraintreeSubscription::ACTIVE) || $includePending) {
+                    foreach ($subscription->transactions as $transaction) {
+                        $invoices->push(new Invoice($this, $subscription, $transaction));
+                    }
                 }
             }
         }
 
-        return new Collection($invoices);
+        return $invoices->sortByDesc(function($invoice) {
+            return $invoice->date();
+        });
     }
 
     /**
@@ -204,7 +226,7 @@ trait Billable
     {
         $customer = $this->asBraintreeCustomer();
 
-        $result = PaymentMethod::update($customer->paymentMethods[0], [
+        $result = PaymentMethod::update($customer->paymentMethods[0]->token, [
             'paymentMethodNonce' => $nonce,
         ]);
 

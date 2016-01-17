@@ -2,14 +2,14 @@
 
 namespace LimeDeck\CashierBraintree;
 
-use Braintree\Discount;
-use Braintree\Plan;
 use Braintree\Subscription as BraintreeSubscription;
 use Carbon\Carbon;
 use Exception;
 
 class SubscriptionBuilder
 {
+    use BraintreeHelpers;
+
     /**
      * The user model that is subscribing.
      *
@@ -121,7 +121,11 @@ class SubscriptionBuilder
     {
         $customer = $this->getBraintreeCustomer($nonce, $options);
 
+        $plan = $this->findPlanById($this->plan);
+        $planPriceWithTax = $this->planPriceWithTax($plan, $this->getTaxPercentageForPayload());
+
         $subscriptionOptions = [
+            'price'              => $planPriceWithTax,
             'paymentMethodToken' => $customer->paymentMethods[0]->token,
             'planId'             => $this->plan,
             'trialDuration'      => $this->trialDays ?: 0,
@@ -130,25 +134,10 @@ class SubscriptionBuilder
         ];
 
         if ($this->coupon) {
-            $braintreeCoupons = Discount::all();
-            $braintreePlans = Plan::all();
 
-            $coupon = null;
-            $plan = null;
+            $coupon = $this->findCouponById($this->coupon);
 
-            foreach ($braintreeCoupons as $braintreeCoupon) {
-                if ($braintreeCoupon->id == $this->coupon) {
-                    $coupon = $braintreeCoupon;
-                }
-            }
-
-            foreach ($braintreePlans as $braintreePlan) {
-                if ($braintreePlan->id == $this->plan) {
-                    $plan = $braintreePlan;
-                }
-            }
-
-            $amount = $this->couponPercentage ? ($coupon->amount / 100) * $plan->price : $coupon->amount;
+            $amount = $this->couponPercentage ? ($coupon->amount / 100) * $planPriceWithTax : $coupon->amount;
 
             $subscriptionOptions['discounts'] = [
                 'add' => [

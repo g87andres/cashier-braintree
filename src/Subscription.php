@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
 {
+    use BraintreeHelpers;
+
     /**
      * The attributes that aren't mass assignable.
      *
@@ -133,8 +135,11 @@ class Subscription extends Model
     {
         $subscription = $this->asBraintreeSubscription();
 
+        $newPlan = $this->findPlanById($plan);
+
         $changes = [
-            'planId'  => $plan,
+            'price' => $this->planPriceWithTax($newPlan, $this->user->taxPercentage()),
+            'planId'  => $newPlan->id,
             'options' => [
                 'prorateCharges' => true,
             ],
@@ -143,7 +148,7 @@ class Subscription extends Model
         $result = BraintreeSubscription::update($subscription->id, $changes);
 
         if ($result->success) {
-            $this->fill(['braintree_plan' => $plan])->save();
+            $this->fill(['braintree_plan' => $newPlan->id])->save();
 
             return $this;
         }
