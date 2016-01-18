@@ -31,6 +31,7 @@ abstract class BaseTest extends PHPUnit_Framework_TestCase
             $table->string('email');
             $table->string('name');
             $table->string('braintree_id')->nullable();
+            $table->string('payment_type', 25)->nullable();
             $table->string('card_brand')->nullable();
             $table->string('card_last_four')->nullable();
             $table->timestamps();
@@ -60,14 +61,19 @@ abstract class BaseTest extends PHPUnit_Framework_TestCase
         $this->schema()->drop('subscriptions');
     }
 
-    protected function getTestToken()
+    protected function getVisaToken()
     {
         return 'fake-valid-country-of-issuance-usa-nonce';
     }
 
-    protected function getAnotherTestToken()
+    protected function getMasterCardToken()
     {
         return 'fake-valid-mastercard-nonce';
+    }
+
+    protected function getPaypalToken()
+    {
+        return 'fake-paypal-future-nonce';
     }
 
     /**

@@ -5,7 +5,7 @@ use Carbon\Carbon;
 class CashierTest extends \BaseTest
 {
     /** @test */
-    public function subscriptions_can_be_created()
+    public function subscriptions_can_be_created_with_card()
     {
         $user = User::create([
             'email' => 'john@example.com',
@@ -13,7 +13,7 @@ class CashierTest extends \BaseTest
         ]);
 
         // Create Subscription
-        $user->newSubscription('main', 'monthly-10-1')->create($this->getTestToken());
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getVisaToken());
 
         $this->assertEquals(1, count($user->subscriptions));
         $this->assertNotNull($user->subscription('main')->braintree_id);
@@ -24,6 +24,7 @@ class CashierTest extends \BaseTest
         $this->assertTrue($user->subscription('main')->active());
         $this->assertFalse($user->subscription('main')->cancelled());
         $this->assertFalse($user->subscription('main')->onGracePeriod());
+        $this->assertEquals('card', $user->payment_type);
         $this->assertNotNull($user->card_brand);
         $this->assertNotNull($user->card_last_four);
 
@@ -75,6 +76,30 @@ class CashierTest extends \BaseTest
     }
 
     /** @test */
+    public function subscriptions_can_be_created_with_paypal_account()
+    {
+        $user = User::create([
+            'email' => 'john@example.com',
+            'name'  => 'John Doe',
+        ]);
+
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getPaypalToken());
+
+        $this->assertEquals(1, count($user->subscriptions));
+        $this->assertNotNull($user->subscription('main')->braintree_id);
+
+        $this->assertTrue($user->subscribed('main'));
+        $this->assertTrue($user->subscribed('main', 'monthly-10-1'));
+        $this->assertFalse($user->subscribed('main', 'monthly-10-2'));
+        $this->assertTrue($user->subscription('main')->active());
+        $this->assertFalse($user->subscription('main')->cancelled());
+        $this->assertFalse($user->subscription('main')->onGracePeriod());
+        $this->assertEquals('paypal', $user->payment_type);
+        $this->assertNull($user->card_brand);
+        $this->assertNull($user->card_last_four);
+    }
+
+    /** @test */
     public function creating_subscription_with_coupons()
     {
         $user = User::create([
@@ -84,7 +109,7 @@ class CashierTest extends \BaseTest
 
         // Create Subscription
         $user->newSubscription('main', 'monthly-10-1')
-                ->withCoupon('coupon-1')->create($this->getTestToken());
+                ->withCoupon('coupon-1')->create($this->getVisaToken());
 
         $subscription = $user->subscription('main');
 
@@ -114,7 +139,7 @@ class CashierTest extends \BaseTest
 
         // Create Subscription
         $user->newSubscription('main', 'monthly-10-1')
-            ->withCoupon('coupon-1', true)->create($this->getTestToken());
+            ->withCoupon('coupon-1', true)->create($this->getVisaToken());
 
         $subscription = $user->subscription('main');
 
@@ -144,7 +169,7 @@ class CashierTest extends \BaseTest
 
         // Create Subscription
         $user->newSubscription('main', 'monthly-10-1')
-                ->trialDays(7)->create($this->getTestToken());
+                ->trialDays(7)->create($this->getVisaToken());
 
         $subscription = $user->subscription('main');
 
@@ -169,7 +194,7 @@ class CashierTest extends \BaseTest
 
         // Create Subscription
         $user->newSubscription('main', 'monthly-10-1')
-                ->create($this->getTestToken());
+                ->create($this->getVisaToken());
 
         $subscription = $user->subscription('main');
 
@@ -188,7 +213,7 @@ class CashierTest extends \BaseTest
         ]);
 
         // Create Subscription
-        $user->newSubscription('main', 'monthly-10-1')->create($this->getTestToken());
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getVisaToken());
         $user->newSubscription('another', 'monthly-10-2')->create();
 
         $this->assertEquals(2, count($user->subscriptions));
@@ -208,15 +233,19 @@ class CashierTest extends \BaseTest
     }
 
     /** @test */
-    public function user_can_update_their_payment_method()
+    public function users_can_update_their_card()
     {
         $user = User::create([
             'email' => 'john@example.com',
             'name'  => 'John Doe',
         ]);
 
-        $user->newSubscription('main', 'monthly-10-1')->create($this->getTestToken());
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getVisaToken());
 
-        $user->updateCard($this->getAnotherTestToken());
+        $this->assertEquals('Visa', $user->card_brand);
+
+        $user->updateCard($this->getMasterCardToken());
+
+        $this->assertEquals('MasterCard', $user->card_brand);
     }
 }

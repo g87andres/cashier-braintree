@@ -16,7 +16,7 @@ class InvoiceTest extends \BaseTest
         ]);
 
         // Create Subscription
-        $this->user->newSubscription('main', 'monthly-20')->create($this->getTestToken());
+        $this->user->newSubscription('main', 'monthly-20')->create($this->getVisaToken());
         $this->user->newSubscription('another', 'monthly-10-1')->withCoupon('coupon-1')->create();
 
         $this->invoices = $this->user->invoices(true);

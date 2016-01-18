@@ -4,6 +4,7 @@ namespace LimeDeck\CashierBraintree;
 
 use Braintree\Customer as BraintreeCustomer;
 use Braintree\PaymentMethod;
+use Braintree\PayPalAccount;
 use Braintree\Subscription as BraintreeSubscription;
 use Braintree\SubscriptionSearch;
 use Braintree\Transaction;
@@ -294,8 +295,15 @@ trait Billable
         if ($result->success) {
             $this->braintree_id = $result->customer->id;
 
-            $this->card_brand = $result->customer->paymentMethods[0]->cardType;
-            $this->card_last_four = $result->customer->paymentMethods[0]->last4;
+            $paymentMethod = $result->customer->paymentMethods[0];
+
+            if ($paymentMethod instanceof PayPalAccount) {
+                $this->payment_type = 'paypal';
+            } else {
+                $this->payment_type = 'card';
+                $this->card_brand = $paymentMethod->cardType;
+                $this->card_last_four = $paymentMethod->last4;
+            }
 
             $this->save();
 
