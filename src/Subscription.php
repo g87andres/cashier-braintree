@@ -2,6 +2,7 @@
 
 namespace LimeDeck\CashierBraintree;
 
+use Braintree\Plan;
 use Braintree\Subscription as BraintreeSubscription;
 use Carbon\Carbon;
 use Exception;
@@ -99,6 +100,28 @@ class Subscription extends Model
     }
 
     /**
+     * Obtain the current balance of the subscription.
+     *
+     * @return mixed
+     */
+    public function balance()
+    {
+        return $this->asBraintreeSubscription()->balance;
+    }
+
+    /**
+     * Determine how many days are remaining until next billing.
+     *
+     * @return int
+     */
+    public function remainingDaysBeforeNextBilling()
+    {
+        return Carbon::now()->diffInDays(
+            Carbon::instance($this->asBraintreeSubscription()->billingPeriodEndDate)
+        );
+    }
+
+    /**
      * Apply a coupon to the subscription.
      *
      * @param string $coupon
@@ -133,31 +156,20 @@ class Subscription extends Model
      */
     public function swap($plan)
     {
-        $subscription = $this->asBraintreeSubscription();
-
+        $currentPlan = $this->findPlanById($this->braintree_plan);
         $newPlan = $this->findPlanById($plan);
 
-        $changes = [
-            'price' => $this->planPriceWithTax($newPlan, $this->user->taxPercentage()),
-            'planId'  => $newPlan->id,
-            'options' => [
-                'prorateCharges' => true,
-            ],
-        ];
-
-        $result = BraintreeSubscription::update($subscription->id, $changes);
-
-        if ($result->success) {
-            $this->fill(['braintree_plan' => $newPlan->id])->save();
-
-            return $this;
+        if ($this->haveTheSameBillingFrequency($currentPlan, $newPlan)) {
+            $subscription = $this->updatePlan($newPlan);
+        } else {
+            $subscription = $this->replacePlan($currentPlan, $newPlan);
         }
 
-        return false;
+        return $subscription;
     }
 
     /**
-     * Cacnel the subscription at the end of the billing period.
+     * Cancel the subscription at the end of the billing period.
      *
      * @return $this
      */
@@ -188,9 +200,7 @@ class Subscription extends Model
      */
     public function cancelNow()
     {
-        $subscription = $this->asBraintreeSubscription();
-
-        BraintreeSubscription::cancel($subscription->id);
+        BraintreeSubscription::cancel($this->braintree_id);
 
         $this->markAsCancelled();
 
@@ -204,7 +214,9 @@ class Subscription extends Model
      */
     public function markAsCancelled()
     {
-        $this->fill(['ends_at' => Carbon::now()])->save();
+        $this->update([
+            'ends_at' => Carbon::now()
+        ]);
     }
 
     /**
@@ -215,5 +227,85 @@ class Subscription extends Model
     public function asBraintreeSubscription()
     {
         return BraintreeSubscription::find($this->braintree_id);
+    }
+
+    /**
+     * Update current subscription plan to another with the same billing cycle.
+     *
+     * @param \Braintree\Plan $newPlan
+     * @return $this
+     * @throws \Exception
+     */
+    protected function updatePlan(Plan $newPlan) {
+        $changes = [
+            'price' => $this->planPriceWithTax($newPlan, $this->user->taxPercentage()),
+            'planId'  => $newPlan->id,
+            'options' => [
+                'prorateCharges' => true,
+            ],
+        ];
+
+        $result = BraintreeSubscription::update($this->braintree_id, $changes);
+
+        if (! $result->success) {
+            throw new Exception('Plan was not swapped.');
+        }
+
+        $this->update([
+            'braintree_plan' => $newPlan->id
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Replace current subscription plan with another while allowing for different billing cycles.
+     *
+     * @param \Braintree\Plan $currentPlan
+     * @param \Braintree\Plan $newPlan
+     * @return \LimeDeck\CashierBraintree\Subscription
+     * @throws \Exception
+     */
+    protected function replacePlan(Plan $currentPlan, Plan $newPlan)
+    {
+        $amount = $this->calculateCreditAmount($currentPlan);
+
+        $options['discounts'] = [
+            'add' => [
+                [
+                    'inheritedFromId' => 'coupon-universal',
+                    'amount'          => $this->formatAmount($amount),
+                ],
+            ],
+        ];
+
+        try {
+            $newSubscription = (new SubscriptionBuilder($this->user, $this->name, $newPlan->id))
+                ->create(null, [], $options);
+
+            $this->cancelNow();
+
+            return $newSubscription;
+        } catch (Exception $exception) {
+            throw new Exception('Plan was not swapped.');
+        }
+    }
+
+    /**
+     * Calculate credit amount as a replacement for unused subscription period.
+     *
+     * @param \Braintree\Plan $plan
+     * @return mixed
+     */
+    protected function calculateCreditAmount(Plan $plan)
+    {
+        $subscription = $this->asBraintreeSubscription();
+
+        // We can use only 360 days as opposed to 365 in a year for easier calculations
+        // since the difference is present only in marginal cases, with plan changes
+        // requested close to the beginning of the billing cycle for yearly plans.
+        $unusedDays = min(360, $this->remainingDaysBeforeNextBilling());
+
+        return (floatval($subscription->price) / ($plan->billingFrequency * 30)) * $unusedDays;
     }
 }

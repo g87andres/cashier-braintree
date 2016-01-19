@@ -27,7 +27,9 @@ First, setup the following within the Braintree Sandbox console in order to pass
 * Create a plan with an id and name `monthly-10-1` and price of $10.00 (or your regional equivalent)
 * Create a plan with an id and name `monthly-10-2` and price of $10.00 (or your regional equivalent)
 * Create a plan with an id and name `monthly-20` and price of $20.00 (or your regional equivalent)
+* Create a plan with an id and name `yearly-100` and price of $100.00 (or your regional equivalent)
 * Create a Discount with an id and name `coupon-1` and amount of $5.00 (or your regional equivalent)
+* Create a Discount with an id and name `coupon-universal` and amount of $1.00 (or your regional equivalent)
 
 In order to run the tests, run `phpunit` or `vendor/bin/phpunit`.
 

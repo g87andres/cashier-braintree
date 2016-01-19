@@ -112,26 +112,27 @@ class SubscriptionBuilder
      * Create a new Braintree subscription.
      *
      * @param string|null $nonce
-     * @param array       $options
+     * @param array       $customerOptions
+     * @param array       $subscriptionOptions
      *
      * @return \LimeDeck\CashierBraintree\Subscription
      * @throws \Exception
      */
-    public function create($nonce = null, array $options = [])
+    public function create($nonce = null, array $customerOptions = [], array $subscriptionOptions = [])
     {
-        $customer = $this->getBraintreeCustomer($nonce, $options);
+        $customer = $this->getBraintreeCustomer($nonce, $customerOptions);
 
         $plan = $this->findPlanById($this->plan);
         $planPriceWithTax = $this->planPriceWithTax($plan, $this->getTaxPercentageForPayload());
 
-        $subscriptionOptions = [
+        $subscriptionOptions = array_merge($subscriptionOptions, [
             'price'              => $planPriceWithTax,
             'paymentMethodToken' => $customer->paymentMethods[0]->token,
             'planId'             => $this->plan,
             'trialDuration'      => $this->trialDays ?: 0,
             'trialDurationUnit'  => 'day',
             'trialPeriod'        => $this->trialDays ? true : false,
-        ];
+        ]);
 
         if ($this->coupon) {
 
@@ -143,7 +144,7 @@ class SubscriptionBuilder
                 'add' => [
                     [
                         'inheritedFromId' => $this->coupon,
-                        'amount'          => $amount,
+                        'amount'          => $this->formatAmount($amount),
                     ],
                 ],
             ];

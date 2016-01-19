@@ -4,6 +4,7 @@ namespace LimeDeck\CashierBraintree;
 
 use Braintree\Discount as BraintreeDiscount;
 use Braintree\Plan as BraintreePlan;
+use Braintree\Plan;
 use Exception;
 
 trait BraintreeHelpers
@@ -28,6 +29,18 @@ trait BraintreeHelpers
         }
 
         throw new Exception("Plan with id '{$id}' does not exist in your Braintree account.");
+    }
+
+    /**
+     * Compares the billing frequency of two plans.
+     *
+     * @param \Braintree\Plan $firstPlan
+     * @param \Braintree\Plan $secondPlan
+     * @return bool
+     */
+    public function haveTheSameBillingFrequency(Plan $firstPlan, Plan $secondPlan)
+    {
+        return $firstPlan->billingFrequency === $secondPlan->billingFrequency;
     }
 
     /**
@@ -61,6 +74,17 @@ trait BraintreeHelpers
      */
     public function planPriceWithTax(BraintreePlan $plan, $taxPercentage)
     {
-        return number_format((1 + $taxPercentage) * floatval($plan->price), 2);
+        return $this->formatAmount((1 + ($taxPercentage / 100)) * floatval($plan->price));
+    }
+
+    /**
+     * Format float amounts into Braintree accepted form.
+     *
+     * @param $amount
+     * @return string
+     */
+    public function formatAmount($amount)
+    {
+        return number_format($amount, 2, '.', '');
     }
 }

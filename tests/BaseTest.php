@@ -93,4 +93,11 @@ abstract class BaseTest extends PHPUnit_Framework_TestCase
 class User extends Eloquent
 {
     use LimeDeck\CashierBraintree\Billable;
+
+    public static $withTax = false;
+
+    public function taxPercentage()
+    {
+        return static::$withTax ? 10 : 0;
+    }
 }

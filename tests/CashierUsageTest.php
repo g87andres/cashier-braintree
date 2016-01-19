@@ -24,6 +24,7 @@ class CashierTest extends \BaseTest
         $this->assertTrue($user->subscription('main')->active());
         $this->assertFalse($user->subscription('main')->cancelled());
         $this->assertFalse($user->subscription('main')->onGracePeriod());
+        $this->assertEquals(0, $user->subscription('main')->balance());
         $this->assertEquals('card', $user->payment_type);
         $this->assertNotNull($user->card_brand);
         $this->assertNotNull($user->card_last_four);
@@ -73,6 +74,64 @@ class CashierTest extends \BaseTest
         $this->assertFalse($invoice->hasStartingBalance());
         $this->assertNull($invoice->coupon());
         $this->assertInstanceOf(Carbon::class, $invoice->date());
+    }
+
+    /** @test */
+    public function subscriptions_can_be_swapped_from_monthly_to_yearly()
+    {
+        $user = User::create([
+            'email' => 'john@example.com',
+            'name'  => 'John Doe',
+        ]);
+
+        // Create Subscription
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getVisaToken());
+
+        $user->fresh()->subscription('main')->swap('yearly-100');
+
+        $this->assertNotNull($user->subscription('main')->braintree_id);
+
+        $this->assertTrue($user->subscribed('main'));
+        $this->assertTrue($user->subscribed('main', 'yearly-100'));
+        $this->assertFalse($user->subscribed('main', 'monthly-10-1'));
+        $this->assertTrue($user->subscription('main')->active());
+        $this->assertEquals(0.0, floatval($user->subscription('main')->balance()));
+
+
+        $invoice = $user->invoices(true)[0];
+
+        $this->assertCount(2, $user->invoices(true));
+        $this->assertEquals('$100.00', $invoice->subtotal());
+        // total paid amount should be less than full price of the yearly plan
+        $this->assertLessThan(100, floatval(substr($invoice->total(), 1)));
+        $this->assertTrue($invoice->hasDiscount());
+        $this->assertFalse($invoice->hasStartingBalance());
+        $this->assertNotNull($invoice->coupon());
+    }
+
+    /** @test */
+    public function subscriptions_can_be_swapped_from_yearly_to_monthly()
+    {
+        $user = User::create([
+            'email' => 'john@example.com',
+            'name'  => 'John Doe',
+        ]);
+
+        // Create Subscription
+        $user->newSubscription('main', 'yearly-100')->create($this->getVisaToken());
+
+        $user->fresh()->subscription('main')->swap('monthly-10-1');
+
+        $this->assertNotNull($user->subscription('main')->braintree_id);
+
+        $this->assertTrue($user->subscribed('main'));
+        $this->assertTrue($user->subscribed('main', 'monthly-10-1'));
+        $this->assertFalse($user->subscribed('main', 'yearly-100'));
+        $this->assertTrue($user->subscription('main')->active());
+        $this->assertEquals(-90.0, floatval($user->subscription('main')->balance()));
+
+        // user has only one invoice, since the swapping was paid from the credit balance
+        $this->assertCount(1, $user->invoices(true));
     }
 
     /** @test */
@@ -182,6 +241,26 @@ class CashierTest extends \BaseTest
 
         $this->assertTrue($subscription->active());
         $this->assertTrue($subscription->onGracePeriod());
+    }
+
+    /** @test */
+    public function creating_subscription_with_tax()
+    {
+        User::$withTax = true;
+
+        $user = User::create([
+            'email' => 'john@example.com',
+            'name'  => 'John Doe',
+        ]);
+
+        $user->newSubscription('main', 'monthly-10-1')->create($this->getVisaToken());
+
+        $invoice = $user->invoices(true)[0];
+
+        $this->assertEquals('$11.00', $invoice->total());
+        $this->assertEquals('11.00', $user->subscription('main')->asBraintreeSubscription()->price);
+
+        User::$withTax = false;
     }
 
     /** @test */
