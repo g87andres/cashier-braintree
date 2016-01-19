@@ -306,6 +306,8 @@ class Subscription extends Model
         // requested close to the beginning of the billing cycle for yearly plans.
         $unusedDays = min(360, $this->remainingDaysBeforeNextBilling());
 
-        return (floatval($subscription->price) / ($plan->billingFrequency * 30)) * $unusedDays;
+        $valueOfDay = (floatval($subscription->price) / ($plan->billingFrequency * 30));
+
+        return  $valueOfDay * $unusedDays - $subscription->balance;
     }
 }
