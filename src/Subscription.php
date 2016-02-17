@@ -30,6 +30,15 @@ class Subscription extends Model
     ];
 
     /**
+     * The attributes that should be casted to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'custom_properties' => 'array',
+    ];
+
+    /**
      * Get the user that owns the subscription.
      */
     public function user()
@@ -309,5 +318,43 @@ class Subscription extends Model
         $valueOfDay = floatval($subscription->price) / ($plan->billingFrequency * 30);
 
         return  $valueOfDay * $unusedDays - $subscription->balance;
+    }
+
+    /**
+     * Determine if the subscription item has a custom property with the given name.
+     *
+     * @param string $propertyName
+     *
+     * @return bool
+     */
+    public function hasCustomProperty($propertyName)
+    {
+        return array_key_exists($propertyName, $this->custom_properties);
+    }
+
+    /**
+     * Get if the value of custom property with the given name.
+     *
+     * @param string $propertyName
+     * @param mixed  $propertyName
+     *
+     * @return mixed
+     */
+    public function getCustomProperty($propertyName, $default = null)
+    {
+        if (!$this->hasCustomProperty($propertyName)) {
+            return $default;
+        }
+        return $this->custom_properties[$propertyName];
+    }
+
+    /**
+     * Set a custom property value with a given name
+     * @param string $name
+     * @param mixed $value
+     */
+    public function setCustomProperty($name, $value)
+    {
+        $this->custom_properties = array_merge($this->custom_properties, [$name => $value]);
     }
 }

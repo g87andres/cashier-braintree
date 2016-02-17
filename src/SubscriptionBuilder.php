@@ -53,6 +53,13 @@ class SubscriptionBuilder
     protected $couponPercentage = false;
 
     /**
+     * Assign custom properties to the subscription.
+     *
+     * @var array
+     */
+    protected $customProperties = [];
+
+    /**
      * Create a new subscription builder instance.
      *
      * @param mixed  $user
@@ -163,7 +170,21 @@ class SubscriptionBuilder
             'quantity'       => 1,
             'trial_ends_at'  => $this->trialDays ? Carbon::now()->addDays($this->trialDays) : null,
             'ends_at'        => null,
+            'custom_properties' => $this->customProperties
         ]);
+    }
+
+    /**
+     * Set the custom property data.
+     *
+     * @param array $customProperties
+     *
+     * @return $this
+     */
+    public function withCustomProperties(array $customProperties)
+    {
+        $this->customProperties = $customProperties;
+        return $this;
     }
 
     /**
