@@ -125,14 +125,14 @@ class SubscriptionBuilder
         $plan = $this->findPlanById($this->plan);
         $planPriceWithTax = $this->planPriceWithTax($plan, $this->getTaxPercentageForPayload());
 
-        $subscriptionOptions = array_merge($subscriptionOptions, [
+        $subscriptionOptions = array_merge([
             'price'              => $planPriceWithTax,
             'paymentMethodToken' => $customer->paymentMethods[0]->token,
             'planId'             => $this->plan,
             'trialDuration'      => $this->trialDays ?: 0,
             'trialDurationUnit'  => 'day',
             'trialPeriod'        => $this->trialDays ? true : false,
-        ]);
+        ], $subscriptionOptions);
 
         if ($this->coupon) {
 
