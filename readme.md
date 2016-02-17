@@ -44,3 +44,5 @@ If you want to contribute to this package, please fork this repository and creat
 ## License
 
 LimeDeck Cashier-Braintree is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+
+.
