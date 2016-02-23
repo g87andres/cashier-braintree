@@ -1,6 +1,4 @@
-<?php
-
-namespace LimeDeck\CashierBraintree;
+<?php namespace LimeDeck\CashierBraintree;
 
 use Braintree\Plan;
 use Braintree\Subscription as BraintreeSubscription;
