@@ -16,21 +16,21 @@ class Invoice
      *
      * @var \Illuminate\Database\Eloquent\Model
      */
-    protected $user;
+    public $user;
 
     /**
      * The Braintree subscription instance.
      *
      * @var \Braintree\Subscription
      */
-    protected $subscription;
+    public $subscription;
 
     /**
      * The Braintree transaction instance.
      *
      * @var \Braintree\Transaction
      */
-    protected $transaction;
+    public $transaction;
 
     /**
      * Create a new invoice instance.
