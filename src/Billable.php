@@ -111,9 +111,9 @@ trait Billable
      */
     public function findInvoice($plan, $id)
     {
-        $subscription = BraintreeSubscription::search(
-            SubscriptionSearch::planId($plan)
-        );
+        $subscription = BraintreeSubscription::search([
+            SubscriptionSearch::planId()->is($plan)
+        ]);
 
         $transaction = Transaction::find($id);
 
