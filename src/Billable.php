@@ -109,13 +109,11 @@ trait Billable
      *
      * @return \LimeDeck\CashierBraintree\Invoice|null
      */
-    public function findInvoice($plan, $id)
+    public function findInvoice($id)
     {
-        $subscription = BraintreeSubscription::search([
-            SubscriptionSearch::planId()->is($plan)
-        ]);
-
         $transaction = Transaction::find($id);
+
+        $subscription = BraintreeSubscription::find($transaction->subscriptionId);
 
         try {
             return new Invoice($this, $subscription, $transaction);
@@ -127,14 +125,13 @@ trait Billable
     /**
      * Find an invoice or throw a 404 error.
      *
-     * @param string $plan
      * @param string $id
      *
      * @return \LimeDeck\CashierBraintree\Invoice
      */
-    public function findInvoiceOrFail($plan, $id)
+    public function findInvoiceOrFail($id)
     {
-        $invoice = $this->findInvoice($plan, $id);
+        $invoice = $this->findInvoice($id);
 
         if (is_null($invoice)) {
             throw new NotFoundHttpException();
@@ -146,16 +143,15 @@ trait Billable
     /**
      * Create an invoice download Response.
      *
-     * @param string $plan
      * @param string $id
      * @param array  $data
      * @param string $storagePath
      *
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function downloadInvoice($plan, $id, array $data, $storagePath = null)
+    public function downloadInvoice($id, array $data, $storagePath = null)
     {
-        return $this->findInvoiceOrFail($plan, $id)->download($data, $storagePath);
+        return $this->findInvoiceOrFail($id)->download($data, $storagePath);
     }
 
     /**
