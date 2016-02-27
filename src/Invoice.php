@@ -284,6 +284,8 @@ class Invoice
     public function download(array $data)
     {
         $filename = $data['product'].'_'.$this->date()->month.'_'.$this->date()->year.'.pdf';
+        $data['subscription'] = $this->subscription;
+        $data['transaction'] = $this->transaction;
 
         return new Response($this->pdf($data), 200, [
             'Content-Description'       => 'File Transfer',
