@@ -166,6 +166,10 @@ trait Billable
     {
         $invoices = new Collection();
 
+        // return empty array if user does not have a braintree customer ID yet
+        if(is_null($this->braintree_id))
+            return [];
+
         $customer = $this->asBraintreeCustomer();
 
         $parameters = array_merge([
